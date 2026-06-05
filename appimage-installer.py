@@ -2,7 +2,9 @@
 
 import os
 import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HOME = os.path.expanduser("~")
@@ -17,8 +19,34 @@ Exec={app_path}
 Icon={icon_path}
 Type=Application
 Categories=Utility;
-Terminal=false
+Terminal={terminal}
 """
+
+
+def _read_embedded_terminal(appimage_path):
+    """Return True if the AppImage's embedded .desktop sets Terminal=true.
+
+    Terminal apps (TUIs) must be launched in a terminal, otherwise they fail
+    silently when started from a launcher. Defaults to False if it can't be
+    determined.
+    """
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(
+                [str(appimage_path), "--appimage-extract", "*.desktop"],
+                cwd=tmp,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=30,
+                check=False,
+            )
+            for desktop in Path(tmp).rglob("*.desktop"):
+                for line in desktop.read_text(errors="ignore").splitlines():
+                    if line.strip().lower().startswith("terminal="):
+                        return line.split("=", 1)[1].strip().lower() == "true"
+    except Exception:
+        pass
+    return False
 
 class AppimageInstaller():
     _destination_path = None
@@ -69,10 +97,12 @@ class AppimageInstaller():
         desktop_file_path = Path(DESKTOP_DIR) / f"{self.app_name}.desktop"
 
         icon_path = icon_path or "application-x-executable"
+        terminal = _read_embedded_terminal(self.destination_path)
         desktop_content = DESKTOP_FILE_TEMPLATE.format(
             app_name=self.app_name,
             app_path=self.destination_path,
-            icon_path=icon_path
+            icon_path=icon_path,
+            terminal="true" if terminal else "false"
         )
 
         with open(desktop_file_path, "w") as f:

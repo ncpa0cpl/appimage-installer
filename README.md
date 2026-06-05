@@ -8,7 +8,8 @@ I love using **ulauncher** to quickly find and launch applications, and I also e
 
 - Creates `.desktop` files for launcher integration (ulauncher, rofi, etc.)
 - Creates CLI symlinks so you can run apps from terminal
-- Organizes AppImages in `/opt/appimages/`
+- Organizes AppImages in `~/.local/share/appimages/`
+- Honors each AppImage's own `Terminal=` setting so terminal apps (TUIs) launch correctly
 
 ## Usage
 
@@ -25,6 +26,6 @@ make install
 
 ## What it does
 
-1. Moves AppImage to `/opt/appimages/`
-2. Creates symlink in `/usr/local/bin/` for CLI access
+1. Moves AppImage to `~/.local/share/appimages/`
+2. Creates symlink in `~/.local/bin/` for CLI access (make sure this is on your `PATH`)
 3. Creates `.desktop` file in `~/.local/share/applications/` for launcher integration
